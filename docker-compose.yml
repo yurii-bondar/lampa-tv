@@ -1,0 +1,54 @@
+services:
+  torrserver:
+    image: ghcr.io/yourok/torrserver:latest
+    container_name: torrserver
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - torrserver_data:/opt/ts
+    networks:
+      - lampa-tv
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Kyiv
+    networks:
+      - lampa-tv
+
+  jackett:
+    image: linuxserver/jackett:latest
+    container_name: jackett
+    restart: unless-stopped
+    ports:
+      - "9117:9117"
+    environment:
+      - TZ=Europe/Kyiv
+    volumes:
+      - ./jackett-config:/config
+    networks:
+      - lampa-tv
+
+  lampac:
+    image: ghcr.io/lampac-nextgen/lampac
+    container_name: lampac
+    restart: unless-stopped
+    ports:
+      - "9118:9118"
+    shm_size: 1024mb
+    environment:
+      - TZ=Europe/Kyiv
+    volumes:
+      - ./lampac-config/init.conf:/lampac/init.conf
+    networks:
+      - lampa-tv
+
+volumes:
+  torrserver_data:
+
+networks:
+  lampa-tv:
+    name: lampa-tv
