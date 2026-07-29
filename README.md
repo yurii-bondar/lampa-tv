@@ -86,15 +86,37 @@ docker cp jackett:/config/. ./jackett-config/Jackett/
 
 The `docker-compose.yml` already mounts `./jackett-config` as `/config` in the container, so on the next `docker compose up` your indexers and API key will be restored automatically.
 
+**Using your own custom API key (optional):**
+
+By default Jackett auto-generates a random 32-character API key on first start. You can replace it with your own short key instead — Jackett only generates a new one if the `APIKey` field is empty, so it will keep whatever value you put there.
+
+You need to set the **same key in two places**:
+
+1. **Jackett** — `jackett-config/Jackett/ServerConfig.json`, field `APIKey`:
+   ```json
+   "APIKey": "yourCustomKey123"
+   ```
+   - Fresh setup: create this file (see path above) with your key *before* the first `docker compose up` — Jackett will pick it up immediately instead of generating one.
+   - Already running: `docker compose stop jackett`, edit the `APIKey` field in the existing file, then `docker compose start jackett`.
+
+2. **Lampac** — `lampac-config/init.conf`, in the `jackett` block (see below):
+   ```json
+   "apikey": "yourCustomKey123"
+   ```
+
+> **Note:** Avoid `#` and other URL-special characters in the key — the key is sent as a URL query parameter, and an unencoded `#` gets treated as a fragment and truncates everything after it, breaking authentication.
+
 ---
 
 ### Lampac
 
-The Lampac config is located at `lampac-config/init.conf`.
+The Lampac config is located at `lampac-config/init.conf`. This file is gitignored since it holds your personal Jackett API key — copy it from the tracked template on first setup:
 
-To connect Jackett to Lampac, add the following block to `init.conf`:
+```bash
+cp lampac-config/init.conf.example lampac-config/init.conf
+```
 
-> **Note:** Do not commit `init.conf` after adding your API key — it contains a personal secret.
+`init.conf.example` already includes the `jackett` block:
 
 ```json
 {
@@ -105,7 +127,7 @@ To connect Jackett to Lampac, add the following block to `init.conf`:
 }
 ```
 
-Replace `YOUR_JACKETT_API_KEY` with the key copied from Jackett.
+Replace `YOUR_JACKETT_API_KEY` in your local `init.conf` with the key copied from Jackett.
 
 After editing the config, restart Lampac:
 
