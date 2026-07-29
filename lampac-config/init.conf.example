@@ -39,5 +39,9 @@
     "history": {
       "enable": false
     }
+  },
+  "jackett": {
+    "url": "http://jackett:9117",
+    "apikey": "YOUR_JACKETT_API_KEY"
   }
 }
