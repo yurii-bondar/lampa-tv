@@ -1,0 +1,20 @@
+# Server-only overrides for a machine with a public IP.
+# Copy to docker-compose.override.yml on the server — Docker Compose loads it automatically.
+services:
+  torrserver:
+    # Require login/password (stored in torrserver-config/accs.db)
+    environment:
+      - TS_HTTPAUTH=1
+    volumes:
+      - ./torrserver-config/accs.db:/opt/ts/config/accs.db:ro
+
+  jackett:
+    # Jackett is public so Lampa on the TV can use it as a parser.
+    # Set an admin password before opening the port (see README-server.md).
+    # To keep it private instead (Lampac still reaches it via the Docker network):
+    # ports: !override
+    #   - "127.0.0.1:9117:9117"
+    environment:
+      # Owner of jackett-config/ on the host: `id -u` / `id -g`
+      - PUID=1000
+      - PGID=1000

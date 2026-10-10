@@ -11,6 +11,10 @@ A Docker Compose stack for the [Lampa](https://lampa.mx) smart TV app. Provides 
 | **FlareSolverr** | `8191` | CloudFlare bypass for Jackett |
 | **Lampac** | `9118` | Online content backend for Lampa |
 
+Other setups:
+- [README-server.md](README-server.md) — deploy to a cloud server with a public IP (+ optional Portainer)
+- [README-termux.md](README-termux.md) — run TorrServer + Jackett on an Android phone via Termux
+
 ---
 
 ## Prerequisites
@@ -130,7 +134,7 @@ After editing the config, restart Lampac:
 docker compose restart lampac
 ```
 
-Verify Lampac is working: `http://localhost:9118/api/v1/info`
+Verify Lampac is working: `http://localhost:9118/online.js` (should return JavaScript)
 
 ---
 
