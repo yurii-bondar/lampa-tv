@@ -47,11 +47,14 @@ COPYFILE_DISABLE=1 tar czf - docker-compose.yml docker-compose.override.yml.exam
 
 **Reusing your local Jackett indexers (optional):** add `jackett-config` to the `tar` command above. The directory includes `DataProtection/` keys, so saved tracker credentials keep working on the server.
 
-Lampac config holds the Jackett API key — keep it private on the server:
+Lampac runs as uid `1000` inside the container and must be able to read its config. Keep it private from other users, but owned by that uid:
 
 ```bash
-chmod 600 /opt/lampa-tv/lampac-config/init.conf
+sudo chown 1000:1000 /opt/lampa-tv/lampac-config/init.conf
+sudo chmod 640 /opt/lampa-tv/lampac-config/init.conf
 ```
+
+> **Warning:** With `chmod 600` owned by your user, Lampac silently ignores the file (`Permission denied`) and runs with defaults. Check with `sudo docker exec lampac test -r /lampac/init.conf && echo ok`. After this, edit the file with `sudo`.
 
 ---
 
@@ -87,7 +90,7 @@ cd /opt/lampa-tv
 sudo ./start.sh
 ```
 
-`start.sh` creates `lampac-config/init.conf` from the template if it's missing and warns if the Jackett API key is not set.
+`start.sh` creates `lampac-config/init.conf` from the template if it's missing (then fix its ownership as in step 2).
 
 Check from the server:
 
@@ -116,7 +119,7 @@ rm -f $J
 echo "Jackett admin password: $P"
 ```
 
-> **Tip:** The API key is the only thing protecting the search API, and the TV sends it over plain HTTP. Use a long random key (Jackett UI → reset API key) and update it in `lampac-config/init.conf` and on the TV.
+> **Tip:** The API key is the only thing protecting the search API, and the TV sends it over plain HTTP. Use a long random key (Jackett UI → reset API key) and update it in Lampa's parser settings on the TV.
 
 ---
 
@@ -239,6 +242,9 @@ cd /opt/portainer && sudo docker compose pull && sudo docker compose up -d
 **A tracker asks to log in again after moving to the server**
 - Update the credentials in Jackett (wrench icon → login/password → **Okay** → **Test**)
 - Some trackers block datacenter IPs — check `sudo docker compose logs jackett`
+
+**Lampac ignores `init.conf` (e.g. Kinoukr source missing)**
+- The container can't read the file: `sudo docker exec lampac test -r /lampac/init.conf || echo unreadable` — fix ownership as in step 2, then `sudo docker compose restart lampac`
 
 **Lampac doesn't start, `init.conf` is a directory**
 - Docker created it because the file was missing: `sudo docker compose down && rm -rf lampac-config/init.conf`, then `sudo ./start.sh`
