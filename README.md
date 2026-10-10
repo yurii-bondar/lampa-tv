@@ -36,11 +36,16 @@ cd lampa-tv
 ./start.sh
 ```
 
+`start.sh` creates `lampac-config/init.conf` from the template if it doesn't exist yet and warns if the Jackett API key is not set.
+
 Or manually:
 
 ```bash
+cp -n lampac-config/init.conf.example lampac-config/init.conf
 docker compose up -d
 ```
+
+> **Note:** `lampac-config/init.conf` must exist before `docker compose up`. Otherwise Docker creates an empty *directory* with that name and Lampac fails to start. If that happened, run `docker compose down && rm -rf lampac-config/init.conf` and start again.
 
 ### 3. Verify services are running
 
@@ -66,7 +71,7 @@ No additional configuration needed — it works out of the box. TorrServer will 
 
 Open in browser: `http://localhost:9117`
 
-> **Note:** The `jackett-config/` directory is not tracked in git. On first run Jackett stores its configuration (indexers, credentials, API key) inside the Docker container. You can add indexers manually via the UI each time, or export them to a local directory once and reuse (see below).
+> **Note:** The `jackett-config/` directory is not tracked in git. `docker-compose.yml` mounts it as `/config` in the container, so Jackett's configuration (indexers, credentials, API key) is stored on the host in `jackett-config/Jackett/` and survives `docker compose down` / `up` and image updates. To start from scratch, stop Jackett and delete this directory.
 
 **Adding indexers manually:**
 
@@ -75,16 +80,6 @@ Open in browser: `http://localhost:9117`
 3. For trackers that require login — click the wrench icon next to the indexer and enter credentials
 4. For trackers protected by CloudFlare — go to Jackett **Settings** (top-right gear icon), set **FlareSolverr API URL** to `http://flaresolverr:8191`, click **Apply server settings**
 5. Copy the **API Key** from the top-right corner of the Jackett page — you'll need it for Lampac
-
-**Persisting Jackett config locally (optional):**
-
-After you've set up your indexers, copy the config out of the container so you don't have to redo it after `docker compose down`:
-
-```bash
-docker cp jackett:/config/. ./jackett-config/Jackett/
-```
-
-The `docker-compose.yml` already mounts `./jackett-config` as `/config` in the container, so on the next `docker compose up` your indexers and API key will be restored automatically.
 
 **Using your own custom API key (optional):**
 
@@ -110,7 +105,7 @@ You need to set the **same key in two places**:
 
 ### Lampac
 
-The Lampac config is located at `lampac-config/init.conf`. This file is gitignored since it holds your personal Jackett API key — copy it from the tracked template on first setup:
+The Lampac config is located at `lampac-config/init.conf`. This file is gitignored since it holds your personal Jackett API key — `start.sh` copies it from the tracked template on first run, or you can do it manually:
 
 ```bash
 cp lampac-config/init.conf.example lampac-config/init.conf
