@@ -1,3 +1,7 @@
 jackett-config/
 lampac-config/init.conf
 .idea
+docker-compose.override.yml
+torrserver-config/
+portainer/admin-password.txt
+jackett-admin-password.txt

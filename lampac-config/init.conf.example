@@ -40,6 +40,9 @@
       "enable": false
     }
   },
+  "Kinoukr": {
+    "enable": true
+  },
   "jackett": {
     "url": "http://jackett:9117",
     "apikey": "YOUR_JACKETT_API_KEY"

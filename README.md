@@ -11,6 +11,10 @@ A Docker Compose stack for the [Lampa](https://lampa.mx) smart TV app. Provides 
 | **FlareSolverr** | `8191` | CloudFlare bypass for Jackett |
 | **Lampac** | `9118` | Online content backend for Lampa |
 
+Other setups:
+- [README-server.md](README-server.md) — deploy to a cloud server with a public IP (+ optional Portainer)
+- [README-termux.md](README-termux.md) — run TorrServer + Jackett on an Android phone via Termux
+
 ---
 
 ## Prerequisites
@@ -36,7 +40,7 @@ cd lampa-tv
 ./start.sh
 ```
 
-`start.sh` creates `lampac-config/init.conf` from the template if it doesn't exist yet and warns if the Jackett API key is not set.
+`start.sh` creates `lampac-config/init.conf` from the template if it doesn't exist yet.
 
 Or manually:
 
@@ -79,7 +83,7 @@ Open in browser: `http://localhost:9117`
 2. Search for and add the trackers you want (e.g. `Rutracker`, `NNMClub`, `Kinozal`, etc.)
 3. For trackers that require login — click the wrench icon next to the indexer and enter credentials
 4. For trackers protected by CloudFlare — go to Jackett **Settings** (top-right gear icon), set **FlareSolverr API URL** to `http://flaresolverr:8191`, click **Apply server settings**
-5. Copy the **API Key** from the top-right corner of the Jackett page — you'll need it for Lampac
+5. Copy the **API Key** from the top-right corner of the Jackett page — you'll need it for the parser settings in Lampa on the TV (see [Step 4](#step-4--connect-jackett-and-torrserver))
 
 **Using your own custom API key (optional):**
 
@@ -94,10 +98,7 @@ You need to set the **same key in two places**:
    - Fresh setup: create this file (see path above) with your key *before* the first `docker compose up` — Jackett will pick it up immediately instead of generating one.
    - Already running: `docker compose stop jackett`, edit the `APIKey` field in the existing file, then `docker compose start jackett`.
 
-2. **Lampac** — `lampac-config/init.conf`, in the `jackett` block (see below):
-   ```json
-   "apikey": "yourCustomKey123"
-   ```
+2. **Lampa on the TV** — **Settings** → **Parser** → Jackett API key (see [Step 4](#step-4--connect-jackett-and-torrserver))
 
 > **Note:** Avoid `#` and other URL-special characters in the key — the key is sent as a URL query parameter, and an unencoded `#` gets treated as a fragment and truncates everything after it, breaking authentication.
 
@@ -105,24 +106,15 @@ You need to set the **same key in two places**:
 
 ### Lampac
 
-The Lampac config is located at `lampac-config/init.conf`. This file is gitignored since it holds your personal Jackett API key — `start.sh` copies it from the tracked template on first run, or you can do it manually:
+The Lampac config is located at `lampac-config/init.conf` (gitignored, so local changes stay local). `start.sh` copies it from the tracked template on first run, or you can do it manually:
 
 ```bash
 cp lampac-config/init.conf.example lampac-config/init.conf
 ```
 
-`init.conf.example` already includes the `jackett` block:
+`init.conf.example` sets up the online sources: it disables unused modules (`BaseModule.SkipModules`) and enables the Ukrainian **Kinoukr** source, which is off by default. Other Ukrainian sources (Eneyida, UAKino, UAFilm) are on by default.
 
-```json
-{
-  "jackett": {
-    "url": "http://jackett:9117",
-    "apikey": "YOUR_JACKETT_API_KEY"
-  }
-}
-```
-
-Replace `YOUR_JACKETT_API_KEY` in your local `init.conf` with the key copied from Jackett.
+> **Note:** The `jackett` block in the config is only used by Lampac's `JacRed` module, which is disabled in `SkipModules`. Torrent search does **not** go through Lampac — Lampa on the TV queries Jackett directly (see [Step 4](#step-4--connect-jackett-and-torrserver)), so the API key in `init.conf` can stay a placeholder.
 
 After editing the config, restart Lampac:
 
@@ -130,7 +122,7 @@ After editing the config, restart Lampac:
 docker compose restart lampac
 ```
 
-Verify Lampac is working: `http://localhost:9118/api/v1/info`
+Verify Lampac is working: `http://localhost:9118/online.js` (should return JavaScript)
 
 ---
 
@@ -197,17 +189,15 @@ After the plugin is installed:
 
 ---
 
-### Step 4 — Connect TorrServer
+### Step 4 — Connect Jackett and TorrServer
 
-TorrServer is automatically available once the `etor` plugin is active and Lampac is configured. To verify:
+Torrent search goes from Lampa straight to Jackett, and playback goes through TorrServer.
 
-1. In Lampa open any movie or series
-2. Click **"Watch"** or **"Torrent"**
-3. Lampa will search via Jackett → Lampac → stream through TorrServer
-
-If TorrServer needs to be set manually:
-1. Go to **Settings** → **TorrServer**
-2. Set URL to `http://YOUR_LOCAL_IP:8090`
+1. **Settings** → **Parser**: enable the parser, choose **Jackett**, set
+   - URL: `http://YOUR_LOCAL_IP:9117/` (trailing slash required)
+   - API key: the key copied from Jackett
+2. **Settings** → **TorrServer**: set URL to `http://YOUR_LOCAL_IP:8090`
+3. Open any movie or series → **"Torrents"** — results come from Jackett and play through TorrServer
 
 ---
 
@@ -237,7 +227,7 @@ docker compose logs
 
 **No results in torrent search**
 - Open Jackett at `http://localhost:9117` and test indexers manually
-- Verify the API key in `lampac-config/init.conf` matches Jackett's API key
+- Verify the API key in Lampa's **Parser** settings matches Jackett's API key
 
 ---
 
